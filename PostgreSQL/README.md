@@ -2,8 +2,13 @@
 
 ## Типы данных
 
-- INT - (integer) целые числа
-- VARCHAR - (character varying) тип для хранения текстовых строк
+- `INT` - (integer) целые числа
+- `VARCHAR` - (character varying) тип для хранения текстовых строк
+- `DECIMAL` - тип данных для записи числовых значений с фиксированной точностью. Для использования этого типа в скобках можно 
+указать количество цифр в числе вообще, и  количество знаков 
+после точки. К примеру если задать число таким образом `DECIMAL(3,2)`
+- `DATE` - тип данных для сохранения дата без временной части. Дату удобно задавать в 
+формате YYYY-MM-DD («2024-06-30»).
 
 ## SQL Запросы
 
@@ -174,6 +179,9 @@ WHERE salary > 1000;
 - `>` - больше чем
 - `<=` - меньше чем или равно
 - `>=` - больше чем или равно
+- `LIKE` - сравнивает вхождение
+- `IN` - проверяет значение в выборке
+- `IS NULL` - проверяет на равенство `NULL`
 
 Условие `LIKE` или `NOT LIKE`  позволяет использовать подстановочные символы (метасимволы) в операторе `WHERE`.
 Пример:
@@ -225,6 +233,90 @@ WHERE title LIKE '%Data%';
 - `SUM()` - для нахождения суммы значений.
 - `MIN()` - для нахождения наименьшего значения.
 - `MAX()` - для нахождения наибольшего значения.
+
+#### Сортировка и группировка (ORDER BY, GROUP BY)
+
+##### Сортировка
+
+За сотртировку отвечает конструкция `ORDER BY`. Она имеет два значения
+- `ASC` - по возрастанию (по умолчанию)
+- `DESC` - по убыванию
+
+Пример:
+````sql
+SELECT * 
+FROM positions
+ORDER BY salary DESC, title ASC;
+````
+
+##### Группировка 
+
+За группировку отвечает конструкция `GROUP BY`.
+
+Пример:
+````sql
+SELECT product_id, SUM(quantity) AS total_quantity
+FROM orders
+GROUP BY product_id;
+
+SELECT order_date,product_id, SUM(quantity) AS total_quantity
+FROM orders
+GROUP BY order_date, product_id
+ORDER BY order_date, product_id;
+````
+
+###### Оператор HAVING
+
+`HAVING` — это ключевое слово, которое используется вместе с GROUP BY для фильтрации групп строк, основанных на агрегатных функциях. Оно позволяет применять условия к 
+группам данных после их агрегации.
+
+`HAVING` аналогично `WHERE`, но применяется после агрегации, тогда как WHERE применяется до нее.
+
+Использование GROUP BY и HAVING:
+
+- `GROUP BY`: Группирует строки по значениям одного или нескольких столбцов.
+- `HAVING`: Фильтрует группы, созданные GROUP BY, на основе условий, содержащих агрегатные функции.
+
+Пример:
+````sql
+SELECT order_date, product_id, SUM(quantity) AS total_quantity
+FROM orders
+GROUP BY order_date, product_id
+HAVING SUM(quantity) > 2
+ORDER BY order_date, product_id;
+````
+
+#### Подзапросы
+Подзапросы - это запросы, которые включены внутри других запросов и могут 
+использоваться для извлечения данных, фильтрации, сравнения и других операций.
+
+Возможно использовать с операторами:
+- `WHERE`
+- `FROM`
+- `SELECT`
+
+Примеры:
+````sql
+SELECT title, salary
+FROM positions
+WHERE salary IN (SELECT MAX(salary) FROM positions)
+
+SELECT name,email
+FROM customers
+WHERE (SELECT COUNT(*) FROM orders WHERE orders.customer_id = customers.customer_id) > 5;;
+````
+
+Есть еще один сценарий, о существовании которого необходимо знать. 
+Это использование подзапросов в операторе FROM. В операторе FROM подзапросы называются встроенными представлениями (view), то есть результатом уже отобранных по какому-то признаку строк.
+
+В этом случае к результатам подзапроса можно обращаться как к 
+обычной таблице, но есть одно условие: результату подзапроса обязательно нужно назначить псевдоним. Если не задать псевдоним, то возникнет ошибка. Псевдоним назначается уже привычным способом используя оператор AS.
+
+```sql
+SELECT subquery.product_id, subquery.order_date, MAX(subquery.quantity) AS max_quantity_per_day
+FROM (SELECT product_id,order_date,quantity FROM orders WHERE product_id = 2) AS subquery
+GROUP BY subquery.product_id, subquery.order_date;
+```
 
 ## Оптимизация
 
